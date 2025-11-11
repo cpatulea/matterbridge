@@ -84,6 +84,7 @@ github.com/dyatlov/go-opengraph/opengraph/types/video
 github.com/exepirit/meshtastic-go/pkg/meshtastic
 github.com/exepirit/meshtastic-go/pkg/meshtastic/http
 github.com/exepirit/meshtastic-go/pkg/meshtastic/proto
+github.com/exepirit/meshtastic-go/pkg/meshtastic/udp
 # github.com/fatih/color v1.17.0
 ## explicit; go 1.17
 github.com/fatih/color
