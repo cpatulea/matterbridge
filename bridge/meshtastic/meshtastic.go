@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/42wim/matterbridge/bridge"
 	"github.com/42wim/matterbridge/bridge/config"
@@ -15,6 +16,7 @@ import (
 	http "github.com/exepirit/meshtastic-go/pkg/meshtastic/http"
 	meshtastic_proto "github.com/exepirit/meshtastic-go/pkg/meshtastic/proto"
 	udp "github.com/exepirit/meshtastic-go/pkg/meshtastic/udp"
+	"github.com/hashicorp/golang-lru/v2/expirable"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -24,6 +26,7 @@ type Bmeshtastic struct {
 	primary  *meshtastic_proto.Channel
 
 	transportRx meshtastic.MeshTransport
+	idSeen      *expirable.LRU[uint32, struct{}]
 
 	*bridge.Config
 }
@@ -96,6 +99,8 @@ func (b *Bmeshtastic) Connect() error {
 		return err
 	}
 	b.transportRx = transportRx
+
+	b.idSeen = expirable.NewLRU[uint32, struct{}](1000, nil, 1*time.Minute)
 
 	return nil
 }
@@ -171,7 +176,7 @@ func (b *Bmeshtastic) decrypt(packet *meshtastic_proto.MeshPacket) (*meshtastic_
 		default:
 			psk = []byte{0xd4, 0xf1, 0xbb, 0x3a, 0x20, 0x29, 0x07, 0x59,
 				0xf0, 0xbc, 0xff, 0xab, 0xcf, 0x4e, 0x69, 0x01}
-			psk[len(psk) - 1] += b.primary.Settings.Psk[0] - 1
+			psk[len(psk)-1] += b.primary.Settings.Psk[0] - 1
 		}
 	default:
 		psk = b.primary.Settings.Psk
@@ -227,8 +232,6 @@ func (b *Bmeshtastic) receive() {
 		}
 
 		if packet.To == meshtastic.BroadcastNodenum {
-			// TODO: deduplicate on Id
-
 			var data *meshtastic_proto.Data
 			if packet.GetDecoded() != nil {
 				data = packet.GetDecoded()
@@ -243,10 +246,14 @@ func (b *Bmeshtastic) receive() {
 			}
 
 			if data.Portnum == meshtastic_proto.PortNum_TEXT_MESSAGE_APP {
-				b.Remote <- config.Message{
-					// TODO: look up Node name
-					Username: "TODO", Text: string(data.Payload),
-					Channel: "PRIMARY", Account: b.Account,
+				if !b.idSeen.Contains(packet.Id) {
+					b.idSeen.Add(packet.Id, struct{}{})
+
+					b.Remote <- config.Message{
+						// TODO: look up Node name
+						Username: "TODO", Text: string(data.Payload),
+						Channel: "PRIMARY", Account: b.Account,
+					}
 				}
 			}
 		}

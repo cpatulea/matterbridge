@@ -3,9 +3,10 @@ package meshtastic
 import (
 	"context"
 	"fmt"
-	"github.com/exepirit/meshtastic-go/pkg/meshtastic/proto"
 	"log/slog"
 	"math/rand"
+
+	"github.com/exepirit/meshtastic-go/pkg/meshtastic/proto"
 )
 
 // DeviceModuleConfig provides actions for device configuration.
