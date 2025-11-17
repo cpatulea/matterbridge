@@ -8,6 +8,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log/slog"
+	"math/rand/v2"
 	"time"
 
 	"github.com/42wim/matterbridge/bridge"
@@ -158,6 +159,7 @@ func (b *Bmeshtastic) Send(msg config.Message) (string, error) {
 	}
 
 	packet := &meshtastic_proto.MeshPacket{
+		Id:      rand.Uint32(),
 		To:      meshtastic.BroadcastNodenum,
 		Channel: uint32(b.primary.Index),
 		PayloadVariant: &meshtastic_proto.MeshPacket_Decoded{
@@ -169,6 +171,7 @@ func (b *Bmeshtastic) Send(msg config.Message) (string, error) {
 		Priority: meshtastic_proto.MeshPacket_RELIABLE,
 		WantAck:  true,
 	}
+	b.idSeen.Add(packet.Id, struct{}{})
 	b.Log.Debugf("Sending packet %v", packet)
 
 	err := b.deviceTx.SendToMesh(context.Background(), packet)
