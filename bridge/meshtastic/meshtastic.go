@@ -16,6 +16,7 @@ import (
 	http "github.com/exepirit/meshtastic-go/pkg/meshtastic/http"
 	meshtastic_proto "github.com/exepirit/meshtastic-go/pkg/meshtastic/proto"
 	udp "github.com/exepirit/meshtastic-go/pkg/meshtastic/udp"
+	lru "github.com/hashicorp/golang-lru"
 	"github.com/hashicorp/golang-lru/v2/expirable"
 	"google.golang.org/protobuf/proto"
 )
@@ -27,6 +28,7 @@ type Bmeshtastic struct {
 
 	transportRx meshtastic.MeshTransport
 	idSeen      *expirable.LRU[uint32, struct{}]
+	nodeName    *lru.Cache
 
 	*bridge.Config
 }
@@ -104,6 +106,17 @@ func (b *Bmeshtastic) Connect() error {
 	b.transportRx = transportRx
 
 	b.idSeen = expirable.NewLRU[uint32, struct{}](1000, nil, 1*time.Minute)
+	b.nodeName, err = lru.New(1000)
+	if err != nil {
+		return err
+	}
+
+	for _, node := range state.Nodes {
+		if node.User != nil {
+			b.nodeName.Add(node.Num, node.User.ShortName)
+		}
+	}
+	b.Log.Infof("Added %d nodes to name cache", b.nodeName.Len())
 
 	return nil
 }
@@ -234,6 +247,8 @@ func (b *Bmeshtastic) receive() {
 			break
 		}
 
+		// TODO: support DMs
+
 		if packet.To == meshtastic.BroadcastNodenum {
 			var data *meshtastic_proto.Data
 			if packet.GetDecoded() != nil {
@@ -248,13 +263,31 @@ func (b *Bmeshtastic) receive() {
 				b.Log.Errorf("Unexpected payload variant: %v", packet)
 			}
 
-			if data.Portnum == meshtastic_proto.PortNum_TEXT_MESSAGE_APP {
+			switch data.Portnum {
+			case meshtastic_proto.PortNum_NODEINFO_APP:
+				node := new(meshtastic_proto.NodeInfo)
+				err = proto.Unmarshal(data.Payload, node)
+				if err != nil {
+					b.Log.Warnf("Failed to parse NodeInfo: %v", err)
+					break
+				}
+				if node.User != nil {
+					b.nodeName.Add(packet.From, node.User.ShortName)
+				}
+			case meshtastic_proto.PortNum_TEXT_MESSAGE_APP:
 				if !b.idSeen.Contains(packet.Id) {
 					b.idSeen.Add(packet.Id, struct{}{})
 
+					nameIntf, found := b.nodeName.Get(packet.From)
+					var name string
+					if found {
+						name = nameIntf.(string)
+					} else {
+						name = fmt.Sprintf("%04x", packet.From&0xffff)
+					}
+
 					b.Remote <- config.Message{
-						// TODO: look up Node name
-						Username: "TODO", Text: string(data.Payload),
+						Username: name, Text: string(data.Payload),
 						Channel: "PRIMARY", Account: b.Account,
 					}
 				}
