@@ -89,10 +89,13 @@ func (b *Bmeshtastic) Connect() error {
 	b.Log.Infof("MyInfo: %+v", state.MyInfo)
 	b.Log.Infof("Metadata: %+v", state.Device)
 	b.Log.Infof("Channels: %+v", redactPskChannels(state.Channels))
+	b.Log.Infof("Network config: %+v", state.NetworkConfig)
 	b.deviceTx = deviceTx
 	b.state = &state
 
-	// TODO: ensure device has UDP enabled
+	if state.NetworkConfig.EnabledProtocols&uint32(meshtastic_proto.Config_NetworkConfig_UDP_BROADCAST) == 0 {
+		return fmt.Errorf("device must have UDP broadcast enabled (https://meshtastic.org/docs/configuration/radio/network/#protocol-flags)")
+	}
 
 	transportRx, err := udp.NewTransport(transportTx.URL)
 	if err != nil {
