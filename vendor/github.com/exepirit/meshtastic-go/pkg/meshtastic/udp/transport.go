@@ -3,9 +3,7 @@ package udp
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"net"
-	"net/url"
 
 	"github.com/exepirit/meshtastic-go/pkg/meshtastic"
 	"github.com/exepirit/meshtastic-go/pkg/meshtastic/proto"
@@ -19,16 +17,9 @@ type Transport struct {
 	conn *net.UDPConn
 }
 
-// URL is the base URL of the meshtastic API endpoint. It is NOT actually used for communicating
-// with the device, it is only used to determine the interface to listen for UDP multicast.
-func NewTransport(deviceUrl string) (*Transport, error) {
-	url, err := url.Parse(deviceUrl)
-	if err != nil {
-		return nil, err
-	}
-
+func NewTransport(host string) (*Transport, error) {
 	// Detect which interface routes to the Meshtastic device
-	addr, err := net.ResolveUDPAddr("udp", url.Hostname()+":4403")
+	addr, err := net.ResolveUDPAddr("udp", host+":4403")
 	if err != nil {
 		return nil, err
 	}
@@ -69,7 +60,7 @@ func NewTransport(deviceUrl string) (*Transport, error) {
 		return nil, fmt.Errorf("could not find interface for local address %+v", laddr)
 	}
 
-	slog.Info("Found device interface", slog.Any("interface", foundIntf))
+	Logger.Info("Found device interface", "interface", foundIntf)
 
 	gaddr := &net.UDPAddr{IP: net.IPv4(224, 0, 0, 69), Port: 4403}
 
@@ -94,13 +85,26 @@ func (t *Transport) ReceiveFromMesh(ctx context.Context) (*proto.MeshPacket, err
 	if err != nil {
 		return nil, err
 	}
-	slog.DebugContext(ctx, "Received UDP packet", slog.String("from", addr.String()))
+
+	logAttrs := []any{
+		"from", addr,
+	}
+
+	defer func() {
+		Logger.Debug("Received UDP packet", logAttrs...)
+	}()
 
 	packet := new(proto.MeshPacket)
 	err = protobuf.Unmarshal(buf[:n], packet)
 	if err != nil {
 		return nil, meshtastic.ErrInvalidPacketFormat
 	}
+	logAttrs = append(logAttrs,
+		"meshID", fmt.Sprintf("%08x", packet.Id),
+		"meshFrom", fmt.Sprintf("%08x", packet.From),
+		"meshTo", fmt.Sprintf("%08x", packet.To),
+		"meshChannel", uint64(packet.Channel),
+	)
 	return packet, nil
 }
 

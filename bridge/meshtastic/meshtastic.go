@@ -36,6 +36,7 @@ type Bmeshtastic struct {
 
 func init() {
 	// TODO: should be in main
+	udp.Logger = slog.Default()
 	slog.SetLogLoggerLevel(slog.LevelDebug)
 }
 
@@ -100,7 +101,7 @@ func (b *Bmeshtastic) Connect() error {
 		return fmt.Errorf("device must have UDP broadcast enabled (https://meshtastic.org/docs/configuration/radio/network/#protocol-flags)")
 	}
 
-	transportRx, err := udp.NewTransport(transportTx.URL)
+	transportRx, err := udp.NewTransport(b.GetString("Host"))
 	if err != nil {
 		return err
 	}
