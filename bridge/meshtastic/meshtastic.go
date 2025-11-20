@@ -269,15 +269,14 @@ func (b *Bmeshtastic) receive() {
 
 			switch data.Portnum {
 			case meshtastic_proto.PortNum_NODEINFO_APP:
-				node := new(meshtastic_proto.NodeInfo)
-				err = proto.Unmarshal(data.Payload, node)
+				user := new(meshtastic_proto.User)
+				err = proto.Unmarshal(data.Payload, user)
 				if err != nil {
-					b.Log.Warnf("Failed to parse NodeInfo: %v", err)
+					b.Log.Warnf("Failed to parse NodeInfo payload: %v (%+v)", err, data)
 					break
 				}
-				if node.User != nil {
-					b.nodeName.Add(packet.From, node.User.ShortName)
-				}
+				b.Log.Debugf("User: %+v", user)
+				b.nodeName.Add(packet.From, user.ShortName)
 			case meshtastic_proto.PortNum_TEXT_MESSAGE_APP:
 				if !b.idSeen.Contains(packet.Id) {
 					b.idSeen.Add(packet.Id, struct{}{})
