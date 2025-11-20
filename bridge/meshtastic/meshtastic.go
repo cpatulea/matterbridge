@@ -253,7 +253,9 @@ func (b *Bmeshtastic) receive() {
 
 		// TODO: support DMs
 
-		if packet.To == meshtastic.BroadcastNodenum {
+		const PrimaryChannelHash = 8
+
+		if packet.To == meshtastic.BroadcastNodenum && packet.Channel == PrimaryChannelHash {
 			var data *meshtastic_proto.Data
 			if packet.GetDecoded() != nil {
 				data = packet.GetDecoded()
