@@ -65,7 +65,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/dyatlov/go-opengraph/opengraph v0.0.0-20220524092352-606d7b1e5f8a // indirect
-	github.com/exepirit/meshtastic-go v0.0.0-20251002120813-aa88bc454832
+	github.com/exepirit/meshtastic-go v0.0.0-20260317114735-a5daac49fd6d
 	github.com/fatih/color v1.17.0 // indirect
 	github.com/francoispqt/gojay v1.2.13 // indirect
 	github.com/go-asn1-ber/asn1-ber v1.5.7 // indirect
@@ -150,8 +150,6 @@ require (
 )
 
 //replace github.com/matrix-org/gomatrix => github.com/matterbridge/gomatrix v0.0.0-20220205235239-607eb9ee6419
-
-replace github.com/exepirit/meshtastic-go => ../meshtastic-go
 
 go 1.24.0
 

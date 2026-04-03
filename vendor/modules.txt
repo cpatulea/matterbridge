@@ -79,7 +79,7 @@ github.com/dyatlov/go-opengraph/opengraph/types/image
 github.com/dyatlov/go-opengraph/opengraph/types/music
 github.com/dyatlov/go-opengraph/opengraph/types/profile
 github.com/dyatlov/go-opengraph/opengraph/types/video
-# github.com/exepirit/meshtastic-go v0.0.0-20251002120813-aa88bc454832 => ../meshtastic-go
+# github.com/exepirit/meshtastic-go v0.0.0-20260317114735-a5daac49fd6d
 ## explicit; go 1.24.0
 github.com/exepirit/meshtastic-go/internal/log
 github.com/exepirit/meshtastic-go/pkg/meshtastic
@@ -808,4 +808,3 @@ modernc.org/token
 rsc.io/qr
 rsc.io/qr/coding
 rsc.io/qr/gf256
-# github.com/exepirit/meshtastic-go => ../meshtastic-go
