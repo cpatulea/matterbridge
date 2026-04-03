@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"math/rand/v2"
 	"time"
+	"errors"
 
 	"github.com/42wim/matterbridge/bridge"
 	"github.com/42wim/matterbridge/bridge/config"
@@ -20,6 +21,7 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/hashicorp/golang-lru/v2/expirable"
 	"google.golang.org/protobuf/proto"
+	"github.com/sirupsen/logrus"
 )
 
 type Bmeshtastic struct {
@@ -247,9 +249,22 @@ func (b *Bmeshtastic) receive() {
 	for {
 		packet, err := b.transportRx.ReceiveFromMesh(context.Background())
 		if err != nil {
-			b.Log.Infof("Receive error: %v", err)
-			// TODO: connect loop
-			break
+			var level logrus.Level
+			if errors.Is(err, meshtastic.ErrInvalidPacketFormat) {
+				// Individual packet couldn't be decoded - continue receiving
+				level = logrus.WarnLevel
+			} else {
+				// TODO: handle this more gracefully? connect loop?
+				level = logrus.FatalLevel
+			}
+
+			b.Log.Log(level, "Receive error: %v", err)
+
+			if level == logrus.WarnLevel {
+				continue
+			} else {
+				break
+			}
 		}
 
 		// TODO: support DMs
