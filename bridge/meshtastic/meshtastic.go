@@ -76,6 +76,7 @@ func redactPskChannels(channels []*meshtastic_proto.Channel) []*meshtastic_proto
 func (b *Bmeshtastic) Connect() error {
 	transportTx := &http.Transport{
 		URL: "http://" + b.GetString("Host"),
+    // TODO: disable keep-alive to minimize ESP32 heap consumption
 	}
 
 	b.Log.Infof("Connecting %s", transportTx.URL)
@@ -160,14 +161,14 @@ func (b *Bmeshtastic) Send(msg config.Message) (string, error) {
 	}
 
 	packet := &meshtastic_proto.MeshPacket{
-		Id:      rand.Uint32(),
+		Id:      rand.Uint32(), // TODO: meshtastic-go, and firmware, assigns
 		To:      meshtastic.BroadcastNodenum,
 		Channel: uint32(b.primary.Index),
 		PayloadVariant: &meshtastic_proto.MeshPacket_Decoded{
 			Decoded: &meshtastic_proto.Data{
 				Portnum:      meshtastic_proto.PortNum_TEXT_MESSAGE_APP,
 				Payload:      []byte(text),
-				WantResponse: true,
+				WantResponse: true, // TODO: no
 			}},
 		Priority: meshtastic_proto.MeshPacket_RELIABLE,
 		WantAck:  true,
