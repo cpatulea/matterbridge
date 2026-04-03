@@ -1,0 +1,13 @@
+[Unit]
+Description=Matterbridge to Meshtastic
+After=network-online.target
+
+[Service]
+SyslogIdentifier=matterbridge-meshtastic
+Type=simple
+WorkingDirectory=/home/eigma/src/matterbridge/
+ExecStart=/home/eigma/src/matterbridge/matterbridge -debug
+Restart=always
+
+[Install]
+WantedBy=default.target
