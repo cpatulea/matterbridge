@@ -6,11 +6,11 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math/rand/v2"
 	"time"
-	"errors"
 
 	"github.com/42wim/matterbridge/bridge"
 	"github.com/42wim/matterbridge/bridge/config"
@@ -20,8 +20,8 @@ import (
 	udp "github.com/exepirit/meshtastic-go/pkg/meshtastic/udp"
 	lru "github.com/hashicorp/golang-lru"
 	"github.com/hashicorp/golang-lru/v2/expirable"
-	"google.golang.org/protobuf/proto"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/proto"
 )
 
 type Bmeshtastic struct {
@@ -78,7 +78,7 @@ func redactPskChannels(channels []*meshtastic_proto.Channel) []*meshtastic_proto
 func (b *Bmeshtastic) Connect() error {
 	transportTx := &http.Transport{
 		URL: "http://" + b.GetString("Host"),
-    // TODO: disable keep-alive to minimize ESP32 heap consumption
+		// TODO: disable keep-alive to minimize ESP32 heap consumption
 	}
 
 	b.Log.Infof("Connecting %s", transportTx.URL)
